@@ -25,29 +25,33 @@ module tic_tac_toe(
 	 input [7:0] JA, // keypad
 	 output [7:0] seg, // seven seg display
 	 output [4:0] an,
-	 output [7:0] LED, // LED
-	 output [2:0] vgaRed, // vga display
-	 output [2:0] vgaGreen,
-	 output [1:0] vgaBlue,
-	 output Hsync,
-	 output Vsync
+	 // output [7:0] Led, // LED
+	 output [2:0] red, // vga display
+	 output [2:0] green,
+	 output [1:0] blue,
+	 output hsync,
+	 output vsync
 	 );
 
 	wire [8:0] x;
-	wire [8:0] y;
+	wire [8:0] o;
 	wire [3:0] d0, d1, d2, d3;
 	wire vga_clk, display_clk;
+
+	assign x = 9'b111101111;
+	assign o = 9'b000010000;
+	assign d0 = 4'b0001;
 
 	vga_display screen(
 		.vga_clk(vga_clk),
 		.rst(btnu), // debounce
 		.x(x),
-		.y(y),
+		.o(o),
 		.hsync(hsync),
 		.vsync(vsync),
-		.vgaRed(vgaRed),
-		.vgaGreen(vgaGreen),
-		.vgaBlue(vgaBlue)
+		.vgaRed(red),
+		.vgaGreen(green),
+		.vgaBlue(blue)
 	);
 	
 	clock_gen generator(
@@ -69,13 +73,27 @@ module tic_tac_toe(
 endmodule
 
 
+module debouncing(
+	 input btnu, // buttons
+	 input btns,
+	 input [7:0] JA // keypad
+);
+
+module game_logic(
+	input [8:0] x_in,
+	input [8:0] o_in,
+	output [8:0] x,
+	output [8:0] o
+);
+endmodule
+
 
 // adapted from sample code
 module vga_display(
 	input vga_clk,
 	input rst,
 	input [8:0] x,
-	input [8:0] y,
+	input [8:0] o,
 	output hsync,
 	output vsync,
 	output reg [2:0] vgaRed,
@@ -96,35 +114,48 @@ module vga_display(
 	
 	// dividers for grid
 	parameter hline1 = vbp + 160;
-	parameter hline2 = vbp - 160;
+	parameter hline2 = vfp - 160;
 	parameter vline1 = hbp + 160;
 	parameter vline2 = hfp - 160;
 	parameter lineWidth = 3;
-	parameter letterHeight = 70; // half the height of an X/O
+	parameter letterHeight = 60; // half the height of an X/O
+	
+	parameter cx0 = hbp + 80;
+	parameter cx1 = hbp + 240;
+	parameter cx2 = hbp + 400;
+	parameter cy0 = vbp + 80;
+	parameter cy1 = vbp + 240;
+	parameter cy2 = vbp + 400;
 
 	// current location on the screen
 	reg [9:0] hc;
 	reg [9:0] vc;
 
-	function drawX;
-		input cx, cy;
-		
-		begin
-			if (cx - letterHeight <= hc && hc <= cx + letterHeight &&
-				cy - letterHeight <= vc && vc <= cy + letterHeight &&
-				-lineWidth <= (hc - cx) - (vc - cy) && 
-				(hc - cx) - (vc - cy) <= lineWidth 
-				) begin
-				
-				vgaRed = 3'b111;
-				vgaGreen = 3'b111;
-				vgaBlue = 2'b11;
-				drawX = 1'b1;
-			end
-			
-			drawX = 1'b0;
-		end
-	endfunction
+
+// not working?
+//	function drawX;
+//		input cx, cy;
+//		
+//		begin
+//			if (cx - letterHeight <= hc && hc <= cx + letterHeight &&
+//				cy - letterHeight <= vc && vc <= cy + letterHeight &&
+//				-lineWidth <= (hc - cx) - (vc - cy) && 
+//				(hc - cx) - (vc - cy) <= lineWidth 
+//				) begin
+//				
+//				vgaRed = 3'b111;
+//				vgaGreen = 3'b111;
+//				vgaBlue = 2'b11;
+//				drawX = 1'b1;
+//			end
+//			else begin
+//				vgaRed = 3'b111;
+//				vgaGreen = 3'b111;
+//				vgaBlue = 2'b11;
+//				drawX = 1'b0;
+//			end
+//		end
+//	endfunction
 	
 	always @(posedge vga_clk or posedge rst)
 	begin
@@ -149,16 +180,54 @@ module vga_display(
 	assign vsync = (vc < vpulse) ? 0: 1;
 	
 	always @(vc or hc) begin
-		vgaRed = 3'b0;
-		vgaGreen = 3'b0;
-		vgaBlue = 2'b0;
-		
-		for (integer i = 0; i < 3; i = i + 1) begin
-			for (integer j = 0; j < 3; j = j + 1) begin
-				if (x[3*i + j]) 
-					drawX(vbp + (2*i+1)*80, hbp + (2*j + 1)*80);
-			end
+		if ((hline1 - lineWidth <= vc && vc <= hline1 + lineWidth) ||
+			(hline2 - lineWidth <= vc && vc <= hline2 + lineWidth) ||
+			(vline1 - lineWidth <= hc && hc <= vline1 + lineWidth) ||
+			(vline2 - lineWidth <= hc && hc <= vline2 + lineWidth) 
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;			
 		end
+		else if (x[0] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			(((vc - cy0) - (hc - cx0) >= lineWidth && (hc - cx0) - (vc - cy0) <= lineWidth) ||
+			((vc - cy0) + (hc - cx0) + lineWidth >= 0  && (hc - cx0) + (vc - cy0) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		// add stuff
+		else if (x[4] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			(((vc - cy1) - (hc - cx1) >= lineWidth && (hc - cx1) - (vc - cy1) <= lineWidth) ||
+			((vc - cy1) + (hc - cx1) + lineWidth >= 0  && (hc - cx1) + (vc - cy1) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+
+
+		else if (o[4] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			!(cx1 - letterHeight + lineWidth <= hc && hc <= cx1 + letterHeight - lineWidth &&
+			cy1 - letterHeight + lineWidth <= vc && vc <= cy1 + letterHeight - lineWidth)
+			
+			
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+
+		else begin
+			vgaRed = 3'b000;
+			vgaGreen = 3'b000;
+			vgaBlue = 2'b00;
+		end
+		
 	end
 
 endmodule
