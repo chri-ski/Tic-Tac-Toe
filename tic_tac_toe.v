@@ -24,7 +24,7 @@ module tic_tac_toe(
 	 input btns,
 	 input [7:0] JA, // keypad
 	 output [7:0] seg, // seven seg display
-	 output [4:0] an,
+	 output [3:0] an,
 	 // output [7:0] Led, // LED
 	 output [2:0] red, // vga display
 	 output [2:0] green,
@@ -38,13 +38,32 @@ module tic_tac_toe(
 	wire [3:0] d0, d1, d2, d3;
 	wire vga_clk, display_clk;
 
-	assign x = 9'b111101111;
-	assign o = 9'b000010000;
-	assign d0 = 4'b0001;
+	wire rst_score, rst_board;
+	wire [8:0] move;
+	wire inval_move, x_win, y_win;
+
+	debouncing debouncer(
+		.clk(clk),
+		.btnu(btnu),
+		.btns(btns),
+		.JA(JA),
+		.rst_score(rst_score),
+		.rst_board(rst_board),
+		.move(move)
+	);
+	
+	game_logic game(
+		.move(move),
+		.x(x),
+		.o(o),
+		.inval_move(inval_move),
+		.x_win(x_win),
+		.o_win(o_win)
+	);
 
 	vga_display screen(
 		.vga_clk(vga_clk),
-		.rst(btnu), // debounce
+		.rst(rst_board), // unnecessary?
 		.x(x),
 		.o(o),
 		.hsync(hsync),
@@ -74,17 +93,313 @@ endmodule
 
 
 module debouncing(
+	 input clk,
 	 input btnu, // buttons
 	 input btns,
-	 input [7:0] JA // keypad
+	 input [7:0] JA, // keypad
+	 output rst_score,
+	 output rst_board,
+	 output [8:0] move
 );
+	
+	wire [5:0] keypad_in;
+	assign move[0] = keypad_in[0] && keypad_in[3];
+	assign move[1] = keypad_in[0] && keypad_in[4];
+	assign move[2] = keypad_in[0] && keypad_in[5];
+	assign move[3] = keypad_in[1] && keypad_in[3];
+	assign move[4] = keypad_in[1] && keypad_in[4];
+	assign move[5] = keypad_in[1] && keypad_in[5];
+	assign move[6] = keypad_in[2] && keypad_in[3];
+	assign move[7] = keypad_in[2] && keypad_in[4];
+	assign move[8] = keypad_in[2] && keypad_in[5];
+	
+	wire rst_i;
+	reg [1:0] rst_ff;
+	assign rst_i = btns;
+	assign rst = rst_ff[0];
+	always @(posedge clk or posedge rst_i) begin
+		if (rst_i)
+			rst_ff <= 2'b11;
+		else
+			rst_ff <= {1'b0, rst_ff[1]};
+	end
+	
+	wire rst1_i;
+	reg [1:0] rst1_ff;
+	assign rst1_i = btnu;
+	assign rst_board = rst1_ff[0];
+	always @(posedge clk or posedge rst1_i) begin
+		if (rst1_i)
+			rst1_ff <= 2'b11;
+		else
+			rst1_ff <= {1'b0, rst1_ff[1]};
+	end
+	
+	wire kp0_i;
+	reg [1:0] kp0_ff;
+	assign kp0_i = btnu;
+	assign keypad_in[0] = kp0_ff[0];
+	always @(posedge clk or posedge kp0_i) begin
+		if (kp0_i)
+			kp0_ff <= 2'b11;
+		else
+			kp0_ff <= {1'b0, kp0_ff[1]};
+	end
+	
+	wire kp1_i;
+	reg [1:0] kp1_ff;
+	assign kp1_i = btnu;
+	assign keypad_in[1] = kp1_ff[0];
+	always @(posedge clk or posedge kp1_i) begin
+		if (kp1_i)
+			kp1_ff <= 2'b11;
+		else
+			kp1_ff <= {1'b0, kp1_ff[1]};
+	end
+	
+	wire kp2_i;
+	reg [1:0] kp2_ff;
+	assign kp2_i = btnu;
+	assign keypad_in[2] = kp2_ff[0];
+	always @(posedge clk or posedge kp2_i) begin
+		if (kp2_i)
+			kp2_ff <= 2'b11;
+		else
+			kp2_ff <= {1'b0, kp2_ff[1]};
+	end
+	
+	wire kp3_i;
+	reg [1:0] kp3_ff;
+	assign kp3_i = btnu;
+	assign keypad_in[3] = kp3_ff[0];
+	always @(posedge clk or posedge kp3_i) begin
+		if (kp3_i)
+			kp3_ff <= 2'b11;
+		else
+			kp3_ff <= {1'b0, kp3_ff[1]};
+	end
+
+	wire kp4_i;
+	reg [1:0] kp4_ff;
+	assign kp4_i = btnu;
+	assign keypad_in[4] = kp4_ff[0];
+	always @(posedge clk or posedge kp4_i) begin
+		if (kp4_i)
+			kp4_ff <= 2'b11;
+		else
+			kp4_ff <= {1'b0, kp4_ff[1]};
+	end
+	
+	wire kp5_i;
+	reg [1:0] kp5_ff;
+	assign kp5_i = btnu;
+	assign keypad_in[5] = kp5_ff[0];
+	always @(posedge clk or posedge kp5_i) begin
+		if (kp5_i)
+			kp5_ff <= 2'b11;
+		else
+			kp5_ff <= {1'b0, kp5_ff[1]};
+	end
+	
+	
+endmodule
 
 module game_logic(
-	input [8:0] x_in,
-	input [8:0] o_in,
-	output [8:0] x,
-	output [8:0] o
+	input [8:0] move,
+	output reg [8:0] x,
+	output reg [8:0] o,
+	output reg inval_move,
+	output reg x_win,
+	output reg o_win
 );
+
+	reg turn; // 0 --> X, 1 --> O
+	wire some_move = | move;
+	
+	always @(posedge some_move) begin
+		if (move[0]) begin
+			if (x[0] || o[0]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[0] <= 1;
+					if ((o[1] && o[2]) || (o[3] && o[6]) || (o[4] && o[8]))
+						o_win <= 1;
+				end
+				else begin
+					x[0] <= 1;
+					if ((x[1] && x[2]) || (x[3] && x[6]) || (x[4] && x[8]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[1]) begin
+			if (x[1] || o[1]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[1] <= 1;
+					if ((o[0] && o[2]) || (o[4] && o[7]))
+						o_win <= 1;
+				end
+				else begin
+					x[1] <= 1;
+					if ((x[0] && x[2]) || (x[4] && x[7]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[2]) begin
+			if (x[2] || o[2]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[2] <= 1;
+					if ((o[0] && o[1]) || (o[5] && o[8]) || (o[4] && o[6]))
+						o_win <= 1;
+				end
+				else begin
+					x[2] <= 1;
+					if ((x[0] && x[1]) || (x[5] && x[8]) || (x[4] && x[6]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[3]) begin
+			if (x[3] || o[3]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[3] <= 1;
+					if ((o[0] && o[6]) || (o[4] && o[5]))
+						o_win <= 1;
+				end
+				else begin
+					x[3] <= 1;
+					if ((x[0] && x[6]) || (x[4] && x[5]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[4]) begin
+			if (x[4] || o[4]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[4] <= 1;
+					if ((o[0] && o[8]) || (o[1] && o[7]) || (o[2] && o[6]) || (o[3] && o[5]))
+						o_win <= 1;
+				end
+				else begin
+					x[4] <= 1;
+					if ((x[0] && x[8]) || (x[1] && x[7]) || (x[2] && x[6]) || (x[3] && x[5]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[5]) begin
+			if (x[5] || o[5]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[5] <= 1;
+					if ((o[3] && o[4]) || (o[2] && o[8]))
+						o_win <= 1;
+				end
+				else begin
+					x[5] <= 1;
+					if ((x[3] && x[4]) || (x[2] && x[8]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[6]) begin
+			if (x[6] || o[6]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[6] <= 1;
+					if ((o[0] && o[3]) || (o[2] && o[4]) || (o[7] && o[8]))
+						o_win <= 1;
+				end
+				else begin
+					x[6] <= 1;
+					if ((x[0] && x[3]) || (x[2] && x[4]) || (x[7] && x[8]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[7]) begin
+			if (x[7] || o[7]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[7] <= 1;
+					if ((o[1] && o[4]) || (o[6] && o[8]))
+						o_win <= 1;
+				end
+				else begin
+					x[7] <= 1;
+					if ((x[1] && x[4]) || (x[6] && x[8]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		else if (move[8]) begin
+			if (x[8] || o[8]) begin
+				inval_move <= 1;
+			end
+			else begin
+				if (turn) begin
+					o[8] <= 1;
+					if ((o[0] && o[4]) || (o[2] && o[5]) || (o[6] && o[7]))
+						o_win <= 1;
+				end
+				else begin
+					x[8] <= 1;
+					if ((x[0] && x[4]) || (x[2] && x[5]) || (x[6] && x[7]))
+						x_win <= 1;
+				end	
+				
+				inval_move <= 0;
+				turn <= ~turn;
+			end
+		end
+		
+	end
+
 endmodule
 
 
