@@ -22,7 +22,7 @@ module tic_tac_toe(
     input clk,
 	 input btnu, // buttons
 	 input btns,
-	 input [7:0] JB, // keypad
+	 inout [7:0] JB, // keypad
 	 output [7:0] seg, // seven seg display
 	 output [3:0] an,
 	 // output [7:0] Led, // LED
@@ -46,8 +46,8 @@ module tic_tac_toe(
 		.clk(clk),
 		.btnu(btnu),
 		.btns(btns),
-		.rows(JB[3:0]),
-		.cols(JB[7:4]),
+		.cols(JB[3:0]),
+		.rows(JB[7:4]),
 		.rst_score(rst_score),
 		.rst_board(rst_board),
 		.move(move)
@@ -90,6 +90,11 @@ module tic_tac_toe(
 		.seg(seg),
 		.an(an)
 	);
+	
+//	assign d0 = {3'b0, JB[0]};
+//	assign d1 = {3'b0, JB[1]};
+//	assign d2 = {3'b0, JB[2]};
+//	assign d3 = {3'b0, JB[3]};
 
 endmodule
 
@@ -140,7 +145,7 @@ module debouncing(
 	
 	wire kp0_i;
 	reg [1:0] kp0_ff;
-	assign kp0_i = rows[3];
+	assign kp0_i = cols[0];
 	assign keypad_in[0] = kp0_ff[0];
 	always @(posedge clk or posedge kp0_i) begin
 		if (kp0_i)
@@ -151,7 +156,7 @@ module debouncing(
 	
 	wire kp1_i;
 	reg [1:0] kp1_ff;
-	assign kp1_i = rows[2];
+	assign kp1_i = cols[1];
 	assign keypad_in[1] = kp1_ff[0];
 	always @(posedge clk or posedge kp1_i) begin
 		if (kp1_i)
@@ -162,7 +167,7 @@ module debouncing(
 	
 	wire kp2_i;
 	reg [1:0] kp2_ff;
-	assign kp2_i = rows[1];
+	assign kp2_i = cols[2];
 	assign keypad_in[2] = kp2_ff[0];
 	always @(posedge clk or posedge kp2_i) begin
 		if (kp2_i)
@@ -173,7 +178,7 @@ module debouncing(
 	
 	wire kp3_i;
 	reg [1:0] kp3_ff;
-	assign kp3_i = cols[3];
+	assign kp3_i = rows[3];
 	assign keypad_in[3] = kp3_ff[0];
 	always @(posedge clk or posedge kp3_i) begin
 		if (kp3_i)
@@ -184,7 +189,7 @@ module debouncing(
 
 	wire kp4_i;
 	reg [1:0] kp4_ff;
-	assign kp4_i = cols[2];
+	assign kp4_i = rows[2];
 	assign keypad_in[4] = kp4_ff[0];
 	always @(posedge clk or posedge kp4_i) begin
 		if (kp4_i)
@@ -195,7 +200,7 @@ module debouncing(
 	
 	wire kp5_i;
 	reg [1:0] kp5_ff;
-	assign kp5_i = cols[1];
+	assign kp5_i = rows[1];
 	assign keypad_in[5] = kp5_ff[0];
 	always @(posedge clk or posedge kp5_i) begin
 		if (kp5_i)
