@@ -504,7 +504,8 @@ module vga_display(
 			vgaGreen = 3'b111;
 			vgaBlue = 2'b11;			
 		end
-		else if (x[0] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+		// display Xs
+		else if (x[0] && cx0 - letterHeight - lineWidth <= hc && hc <= cx0 + letterHeight + lineWidth &&
 			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
 			(((vc - cy0) - (hc - cx0) >= lineWidth && (hc - cx0) - (vc - cy0) <= lineWidth) ||
 			((vc - cy0) + (hc - cx0) + lineWidth >= 0  && (hc - cx0) + (vc - cy0) <= lineWidth))
@@ -514,6 +515,33 @@ module vga_display(
 			vgaBlue = 2'b11;
 		end
 		// add stuff
+		else if (x[1] && cx1 - letterHeight - lineWidth <= hc && hc <= cx1 + letterHeight + lineWidth &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			(((vc - cy0) - (hc - cx1) >= lineWidth && (hc - cx1) - (vc - cy0) <= lineWidth) ||
+			((vc - cy0) + (hc - cx1) + lineWidth >= 0  && (hc - cx1) + (vc - cy0) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[2] && cx2 - letterHeight - lineWidth <= hc && hc <= cx2 + letterHeight + lineWidth &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			(((vc - cy0) - (hc - cx2) >= lineWidth && (hc - cx2) - (vc - cy0) <= lineWidth) ||
+			((vc - cy0) + (hc - cx2) + lineWidth >= 0  && (hc - cx2) + (vc - cy0) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[3] && cx0 - letterHeight - lineWidth <= hc && hc <= cx0 + letterHeight + lineWidth &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			(((vc - cy1) - (hc - cx0) >= lineWidth && (hc - cx0) - (vc - cy1) <= lineWidth) ||
+			((vc - cy1) + (hc - cx0) + lineWidth >= 0  && (hc - cx0) + (vc - cy1) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
 		else if (x[4] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
 			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
 			(((vc - cy1) - (hc - cx1) >= lineWidth && (hc - cx1) - (vc - cy1) <= lineWidth) ||
@@ -523,14 +551,121 @@ module vga_display(
 			vgaGreen = 3'b111;
 			vgaBlue = 2'b11;
 		end
-
-
+		else if (x[5] && cx2 - letterHeight - lineWidth <= hc && hc <= cx2 + letterHeight + lineWidth &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			(((vc - cy1) - (hc - cx2) >= lineWidth && (hc - cx2) - (vc - cy1) <= lineWidth) ||
+			((vc - cy1) + (hc - cx2) + lineWidth >= 0  && (hc - cx2) + (vc - cy1) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[6] && cx0 - letterHeight - lineWidth <= hc && hc <= cx0 + letterHeight + lineWidth &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			(((vc - cy2) - (hc - cx0) >= lineWidth && (hc - cx0) - (vc - cy2) <= lineWidth) ||
+			((vc - cy2) + (hc - cx0) + lineWidth >= 0  && (hc - cx0) + (vc - cy2) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[7] && cx1 - letterHeight - lineWidth <= hc && hc <= cx1 + letterHeight + lineWidth &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			(((vc - cy2) - (hc - cx1) >= lineWidth && (hc - cx1) - (vc - cy2) <= lineWidth) ||
+			((vc - cy2) + (hc - cx1) + lineWidth >= 0  && (hc - cx1) + (vc - cy2) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[8] && cx2 - letterHeight - lineWidth <= hc && hc <= cx2 + letterHeight + lineWidth &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			(((vc - cy2) - (hc - cx2) >= lineWidth && (hc - cx2) - (vc - cy2) <= lineWidth) ||
+			((vc - cy2) + (hc - cx2) + lineWidth >= 0  && (hc - cx2) + (vc - cy2) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		//	display Os
+		else if (o[0] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			!(cx0 - letterHeight + lineWidth <= hc && hc <= cx0 + letterHeight - lineWidth &&
+			cy0 - letterHeight + lineWidth <= vc && vc <= cy0 + letterHeight - lineWidth)
+				
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[1] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			!(cx1 - letterHeight + lineWidth <= hc && hc <= cx1 + letterHeight - lineWidth &&
+			cy0 - letterHeight + lineWidth <= vc && vc <= cy0 + letterHeight - lineWidth)
+				
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[2] && cx2 - letterHeight <= hc && hc <= cx2 + letterHeight &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			!(cx2 - letterHeight + lineWidth <= hc && hc <= cx2 + letterHeight - lineWidth &&
+			cy0 - letterHeight + lineWidth <= vc && vc <= cy0 + letterHeight - lineWidth)	
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[3] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			!(cx0 - letterHeight + lineWidth <= hc && hc <= cx0 + letterHeight - lineWidth &&
+			cy1 - letterHeight + lineWidth <= vc && vc <= cy1 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
 		else if (o[4] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
 			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
 			!(cx1 - letterHeight + lineWidth <= hc && hc <= cx1 + letterHeight - lineWidth &&
 			cy1 - letterHeight + lineWidth <= vc && vc <= cy1 + letterHeight - lineWidth)
-			
-			
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[5] && cx2 - letterHeight <= hc && hc <= cx2 + letterHeight &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			!(cx2 - letterHeight + lineWidth <= hc && hc <= cx2 + letterHeight - lineWidth &&
+			cy1 - letterHeight + lineWidth <= vc && vc <= cy1 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[6] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			!(cx0 - letterHeight + lineWidth <= hc && hc <= cx0 + letterHeight - lineWidth &&
+			cy2 - letterHeight + lineWidth <= vc && vc <= cy2 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[7] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			!(cx1 - letterHeight + lineWidth <= hc && hc <= cx1 + letterHeight - lineWidth &&
+			cy2 - letterHeight + lineWidth <= vc && vc <= cy2 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[8] && cx2 - letterHeight <= hc && hc <= cx2 + letterHeight &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			!(cx2 - letterHeight + lineWidth <= hc && hc <= cx2 + letterHeight - lineWidth &&
+			cy2 - letterHeight + lineWidth <= vc && vc <= cy2 + letterHeight - lineWidth)
 		) begin
 			vgaRed = 3'b111;
 			vgaGreen = 3'b111;
