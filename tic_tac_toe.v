@@ -22,7 +22,7 @@ module tic_tac_toe(
     input clk,
 	 input btnu, // buttons
 	 input btns,
-	 input [7:0] JA, // keypad
+	 input [7:0] JB, // keypad
 	 output [7:0] seg, // seven seg display
 	 output [3:0] an,
 	 // output [7:0] Led, // LED
@@ -46,7 +46,8 @@ module tic_tac_toe(
 		.clk(clk),
 		.btnu(btnu),
 		.btns(btns),
-		.JA(JA),
+		.rows(JB[3:0]),
+		.cols(JB[7:4]),
 		.rst_score(rst_score),
 		.rst_board(rst_board),
 		.move(move)
@@ -54,6 +55,7 @@ module tic_tac_toe(
 	
 	game_logic game(
 		.move(move),
+		.rst(rst_board),
 		.x(x),
 		.o(o),
 		.inval_move(inval_move),
@@ -96,7 +98,8 @@ module debouncing(
 	 input clk,
 	 input btnu, // buttons
 	 input btns,
-	 input [7:0] JA, // keypad
+	 input [3:0] rows, // keypad
+	 output reg [3:0] cols,
 	 output rst_score,
 	 output rst_board,
 	 output [8:0] move
@@ -104,19 +107,19 @@ module debouncing(
 	
 	wire [5:0] keypad_in;
 	assign move[0] = keypad_in[0] && keypad_in[3];
-	assign move[1] = keypad_in[0] && keypad_in[4];
-	assign move[2] = keypad_in[0] && keypad_in[5];
-	assign move[3] = keypad_in[1] && keypad_in[3];
+	assign move[1] = keypad_in[1] && keypad_in[3];
+	assign move[2] = keypad_in[2] && keypad_in[3];
+	assign move[3] = keypad_in[0] && keypad_in[4];
 	assign move[4] = keypad_in[1] && keypad_in[4];
-	assign move[5] = keypad_in[1] && keypad_in[5];
-	assign move[6] = keypad_in[2] && keypad_in[3];
-	assign move[7] = keypad_in[2] && keypad_in[4];
+	assign move[5] = keypad_in[2] && keypad_in[4];
+	assign move[6] = keypad_in[0] && keypad_in[5];
+	assign move[7] = keypad_in[1] && keypad_in[5];
 	assign move[8] = keypad_in[2] && keypad_in[5];
 	
 	wire rst_i;
 	reg [1:0] rst_ff;
 	assign rst_i = btns;
-	assign rst = rst_ff[0];
+	assign rst_score = rst_ff[0];
 	always @(posedge clk or posedge rst_i) begin
 		if (rst_i)
 			rst_ff <= 2'b11;
@@ -137,7 +140,7 @@ module debouncing(
 	
 	wire kp0_i;
 	reg [1:0] kp0_ff;
-	assign kp0_i = btnu;
+	assign kp0_i = rows[3];
 	assign keypad_in[0] = kp0_ff[0];
 	always @(posedge clk or posedge kp0_i) begin
 		if (kp0_i)
@@ -148,7 +151,7 @@ module debouncing(
 	
 	wire kp1_i;
 	reg [1:0] kp1_ff;
-	assign kp1_i = btnu;
+	assign kp1_i = rows[2];
 	assign keypad_in[1] = kp1_ff[0];
 	always @(posedge clk or posedge kp1_i) begin
 		if (kp1_i)
@@ -159,7 +162,7 @@ module debouncing(
 	
 	wire kp2_i;
 	reg [1:0] kp2_ff;
-	assign kp2_i = btnu;
+	assign kp2_i = rows[1];
 	assign keypad_in[2] = kp2_ff[0];
 	always @(posedge clk or posedge kp2_i) begin
 		if (kp2_i)
@@ -170,7 +173,7 @@ module debouncing(
 	
 	wire kp3_i;
 	reg [1:0] kp3_ff;
-	assign kp3_i = btnu;
+	assign kp3_i = cols[3];
 	assign keypad_in[3] = kp3_ff[0];
 	always @(posedge clk or posedge kp3_i) begin
 		if (kp3_i)
@@ -181,7 +184,7 @@ module debouncing(
 
 	wire kp4_i;
 	reg [1:0] kp4_ff;
-	assign kp4_i = btnu;
+	assign kp4_i = cols[2];
 	assign keypad_in[4] = kp4_ff[0];
 	always @(posedge clk or posedge kp4_i) begin
 		if (kp4_i)
@@ -192,7 +195,7 @@ module debouncing(
 	
 	wire kp5_i;
 	reg [1:0] kp5_ff;
-	assign kp5_i = btnu;
+	assign kp5_i = cols[1];
 	assign keypad_in[5] = kp5_ff[0];
 	always @(posedge clk or posedge kp5_i) begin
 		if (kp5_i)
@@ -206,6 +209,7 @@ endmodule
 
 module game_logic(
 	input [8:0] move,
+	input rst,
 	output reg [8:0] x,
 	output reg [8:0] o,
 	output reg inval_move,
@@ -216,8 +220,16 @@ module game_logic(
 	reg turn; // 0 --> X, 1 --> O
 	wire some_move = | move;
 	
-	always @(posedge some_move) begin
-		if (move[0]) begin
+	always @(posedge some_move or posedge rst) begin
+		if (rst) begin
+			x <= 9'b0;
+			o <= 9'b0;
+			turn <= 1'b0;
+			inval_move <= 1'b0;
+			x_win <= 1'b0;
+			o_win <= 1'b0;
+		end
+		else if (move[0]) begin
 			if (x[0] || o[0]) begin
 				inval_move <= 1;
 			end
@@ -446,31 +458,6 @@ module vga_display(
 	reg [9:0] hc;
 	reg [9:0] vc;
 
-
-// not working?
-//	function drawX;
-//		input cx, cy;
-//		
-//		begin
-//			if (cx - letterHeight <= hc && hc <= cx + letterHeight &&
-//				cy - letterHeight <= vc && vc <= cy + letterHeight &&
-//				-lineWidth <= (hc - cx) - (vc - cy) && 
-//				(hc - cx) - (vc - cy) <= lineWidth 
-//				) begin
-//				
-//				vgaRed = 3'b111;
-//				vgaGreen = 3'b111;
-//				vgaBlue = 2'b11;
-//				drawX = 1'b1;
-//			end
-//			else begin
-//				vgaRed = 3'b111;
-//				vgaGreen = 3'b111;
-//				vgaBlue = 2'b11;
-//				drawX = 1'b0;
-//			end
-//		end
-//	endfunction
 	
 	always @(posedge vga_clk or posedge rst)
 	begin
