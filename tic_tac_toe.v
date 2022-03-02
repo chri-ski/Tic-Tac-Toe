@@ -22,7 +22,7 @@ module tic_tac_toe(
     input clk,
 	 input btnu, // buttons
 	 input btns,
-	 input [7:0] JA, // keypad
+	 inout [7:0] JB, // keypad
 	 output [7:0] seg, // seven seg display
 	 output [3:0] an,
 	 // output [7:0] Led, // LED
@@ -38,27 +38,48 @@ module tic_tac_toe(
 	wire [3:0] d0, d1, d2, d3;
 	wire vga_clk, display_clk;
 
+	wire [3:0] rows_debounced;
+
 	wire rst_score, rst_board;
 	wire [8:0] move;
-	wire inval_move, x_win, y_win;
+	wire inval_move, x_win, y_win, tie;
 
 	debouncing debouncer(
-		.clk(clk),
+		.clk(vga_clk),
 		.btnu(btnu),
 		.btns(btns),
-		.JA(JA),
+		.rows(JB[7:4]),
 		.rst_score(rst_score),
 		.rst_board(rst_board),
+		.rows_debounced(rows_debounced)
+	);
+	
+	keypad_decoder decoder(
+		.clk(clk),
+		.rows_debounced(rows_debounced), 
+		.cols(JB[3:0]),
 		.move(move)
 	);
 	
 	game_logic game(
 		.move(move),
+		.rst(rst_board),
 		.x(x),
 		.o(o),
 		.inval_move(inval_move),
 		.x_win(x_win),
-		.o_win(o_win)
+		.o_win(o_win),
+		.tie(tie)
+	);
+	
+	scoreboard scorer(
+		.rst(rst_score),
+		.x_win(x_win),
+		.o_win(o_win),
+		.d0(d0),
+		.d1(d1),
+		.d2(d2),
+		.d3(d3)
 	);
 
 	vga_display screen(
@@ -96,27 +117,16 @@ module debouncing(
 	 input clk,
 	 input btnu, // buttons
 	 input btns,
-	 input [7:0] JA, // keypad
+	 input [3:0] rows, // keypad
+	 output [3:0] rows_debounced,
 	 output rst_score,
-	 output rst_board,
-	 output [8:0] move
+	 output rst_board
 );
-	
-	wire [5:0] keypad_in;
-	assign move[0] = keypad_in[0] && keypad_in[3];
-	assign move[1] = keypad_in[0] && keypad_in[4];
-	assign move[2] = keypad_in[0] && keypad_in[5];
-	assign move[3] = keypad_in[1] && keypad_in[3];
-	assign move[4] = keypad_in[1] && keypad_in[4];
-	assign move[5] = keypad_in[1] && keypad_in[5];
-	assign move[6] = keypad_in[2] && keypad_in[3];
-	assign move[7] = keypad_in[2] && keypad_in[4];
-	assign move[8] = keypad_in[2] && keypad_in[5];
 	
 	wire rst_i;
 	reg [1:0] rst_ff;
 	assign rst_i = btns;
-	assign rst = rst_ff[0];
+	assign rst_score = rst_ff[0];
 	always @(posedge clk or posedge rst_i) begin
 		if (rst_i)
 			rst_ff <= 2'b11;
@@ -135,43 +145,10 @@ module debouncing(
 			rst1_ff <= {1'b0, rst1_ff[1]};
 	end
 	
-	wire kp0_i;
-	reg [1:0] kp0_ff;
-	assign kp0_i = btnu;
-	assign keypad_in[0] = kp0_ff[0];
-	always @(posedge clk or posedge kp0_i) begin
-		if (kp0_i)
-			kp0_ff <= 2'b11;
-		else
-			kp0_ff <= {1'b0, kp0_ff[1]};
-	end
-	
-	wire kp1_i;
-	reg [1:0] kp1_ff;
-	assign kp1_i = btnu;
-	assign keypad_in[1] = kp1_ff[0];
-	always @(posedge clk or posedge kp1_i) begin
-		if (kp1_i)
-			kp1_ff <= 2'b11;
-		else
-			kp1_ff <= {1'b0, kp1_ff[1]};
-	end
-	
-	wire kp2_i;
-	reg [1:0] kp2_ff;
-	assign kp2_i = btnu;
-	assign keypad_in[2] = kp2_ff[0];
-	always @(posedge clk or posedge kp2_i) begin
-		if (kp2_i)
-			kp2_ff <= 2'b11;
-		else
-			kp2_ff <= {1'b0, kp2_ff[1]};
-	end
-	
 	wire kp3_i;
 	reg [1:0] kp3_ff;
-	assign kp3_i = btnu;
-	assign keypad_in[3] = kp3_ff[0];
+	assign kp3_i = rows[3];
+	assign rows_debounced[3] = kp3_ff[0];
 	always @(posedge clk or posedge kp3_i) begin
 		if (kp3_i)
 			kp3_ff <= 2'b11;
@@ -181,8 +158,8 @@ module debouncing(
 
 	wire kp4_i;
 	reg [1:0] kp4_ff;
-	assign kp4_i = btnu;
-	assign keypad_in[4] = kp4_ff[0];
+	assign kp4_i = rows[2];
+	assign rows_debounced[2] = kp4_ff[0];
 	always @(posedge clk or posedge kp4_i) begin
 		if (kp4_i)
 			kp4_ff <= 2'b11;
@@ -192,8 +169,8 @@ module debouncing(
 	
 	wire kp5_i;
 	reg [1:0] kp5_ff;
-	assign kp5_i = btnu;
-	assign keypad_in[5] = kp5_ff[0];
+	assign kp5_i = rows[1];
+	assign rows_debounced[1] = kp5_ff[0];
 	always @(posedge clk or posedge kp5_i) begin
 		if (kp5_i)
 			kp5_ff <= 2'b11;
@@ -201,23 +178,87 @@ module debouncing(
 			kp5_ff <= {1'b0, kp5_ff[1]};
 	end
 	
+endmodule
+
+
+module keypad_decoder(
+	input clk,
+	input [3:0] rows_debounced, 
+	output reg [3:0] cols,
+	output reg [8:0] move
+);
+
+	reg [1:0] col_update;
+	
+	always @(posedge clk) begin
+		case (col_update) // cycle through which digit to update
+			2'b00: begin
+				case (rows_debounced)
+					4'b0111: move <= 9'b000000001; 
+					4'b1011: move <= 9'b000001000;
+					4'b1101: move <= 9'b001000000;
+					default: move <= 9'b0;
+				endcase
+				cols <= 4'b1011;
+			end
+			2'b01: begin
+				case (rows_debounced)
+					4'b0111: move <= 9'b000000010; 
+					4'b1011: move <= 9'b000010000;
+					4'b1101: move <= 9'b010000000;
+					default: move <= 9'b0;
+				endcase
+				cols <= 4'b1101;
+			end
+			2'b10: begin
+				case (rows_debounced)
+					4'b0111: move <= 9'b000000100; 
+					4'b1011: move <= 9'b000100000;
+					4'b1101: move <= 9'b100000000;
+					default: move <= 9'b0;
+				endcase
+				cols <= 4'b1110;
+			end
+			2'b11: begin
+				move <= 9'b0;
+				cols <= 4'b0111;
+			end
+		endcase
+		
+		col_update <= col_update + 2'b01;
+	end
 	
 endmodule
 
+
+
 module game_logic(
 	input [8:0] move,
+	input rst,
 	output reg [8:0] x,
 	output reg [8:0] o,
 	output reg inval_move,
 	output reg x_win,
-	output reg o_win
+	output reg o_win,
+	output tie
 );
 
 	reg turn; // 0 --> X, 1 --> O
 	wire some_move = | move;
 	
-	always @(posedge some_move) begin
-		if (move[0]) begin
+	always @(posedge some_move or posedge rst) begin
+		if (rst) begin
+			x <= 9'b0;
+			o <= 9'b0;
+			turn <= 1'b0;
+			inval_move <= 1'b0;
+			x_win <= 1'b0;
+			o_win <= 1'b0;
+		end
+		else if (x_win || o_win || tie) begin
+			inval_move <= 1;
+		end
+		else if (move[0]) begin
 			if (x[0] || o[0]) begin
 				inval_move <= 1;
 			end
@@ -397,11 +438,59 @@ module game_logic(
 				turn <= ~turn;
 			end
 		end
+		// check for tie
 		
 	end
 
 endmodule
 
+
+module scoreboard(
+	input rst,
+	input x_win,
+	input o_win,
+	output reg [3:0] d0,
+	output reg [3:0] d1,
+	output reg[3:0] d2,
+	output reg [3:0] d3
+);
+
+	always @(posedge rst or posedge x_win or posedge o_win) begin
+		if (rst) begin
+			d0 <= 4'b0;
+			d1 <= 4'b0;
+			d2 <= 4'b0;
+			d3 <= 4'b0;
+		end
+		else if (x_win) begin
+			if (d3 == 4'b0101 && d2 == 4'b1001) begin
+				d2 <= 4'b0;
+				d3 <= 4'b0;
+			end
+			else if (d2 == 4'b1001) begin
+				d2 <= 4'b0;
+				d3 <= d3 + 4'b1;
+			end
+			else begin
+				d2 <= d2 + 4'b1;
+			end
+		end
+		else if (o_win) begin
+			if (d1 == 4'b0101 && d0 == 4'b1001) begin
+				d0 <= 4'b0;
+				d1 <= 4'b0;
+			end
+			else if (d2 == 4'b1001) begin
+				d0 <= 4'b0;
+				d1 <= d3 + 4'b1;
+			end
+			else begin
+				d0 <= d2 + 4'b1;
+			end
+		end
+	end
+
+endmodule
 
 // adapted from sample code
 module vga_display(
@@ -446,31 +535,6 @@ module vga_display(
 	reg [9:0] hc;
 	reg [9:0] vc;
 
-
-// not working?
-//	function drawX;
-//		input cx, cy;
-//		
-//		begin
-//			if (cx - letterHeight <= hc && hc <= cx + letterHeight &&
-//				cy - letterHeight <= vc && vc <= cy + letterHeight &&
-//				-lineWidth <= (hc - cx) - (vc - cy) && 
-//				(hc - cx) - (vc - cy) <= lineWidth 
-//				) begin
-//				
-//				vgaRed = 3'b111;
-//				vgaGreen = 3'b111;
-//				vgaBlue = 2'b11;
-//				drawX = 1'b1;
-//			end
-//			else begin
-//				vgaRed = 3'b111;
-//				vgaGreen = 3'b111;
-//				vgaBlue = 2'b11;
-//				drawX = 1'b0;
-//			end
-//		end
-//	endfunction
 	
 	always @(posedge vga_clk or posedge rst)
 	begin
@@ -504,7 +568,8 @@ module vga_display(
 			vgaGreen = 3'b111;
 			vgaBlue = 2'b11;			
 		end
-		else if (x[0] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+		// display Xs
+		else if (x[0] && cx0 - letterHeight - lineWidth <= hc && hc <= cx0 + letterHeight + lineWidth &&
 			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
 			(((vc - cy0) - (hc - cx0) >= lineWidth && (hc - cx0) - (vc - cy0) <= lineWidth) ||
 			((vc - cy0) + (hc - cx0) + lineWidth >= 0  && (hc - cx0) + (vc - cy0) <= lineWidth))
@@ -514,6 +579,33 @@ module vga_display(
 			vgaBlue = 2'b11;
 		end
 		// add stuff
+		else if (x[1] && cx1 - letterHeight - lineWidth <= hc && hc <= cx1 + letterHeight + lineWidth &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			(((vc - cy0) - (hc - cx1) >= lineWidth && (hc - cx1) - (vc - cy0) <= lineWidth) ||
+			((vc - cy0) + (hc - cx1) + lineWidth >= 0  && (hc - cx1) + (vc - cy0) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[2] && cx2 - letterHeight - lineWidth <= hc && hc <= cx2 + letterHeight + lineWidth &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			(((vc - cy0) - (hc - cx2) >= lineWidth && (hc - cx2) - (vc - cy0) <= lineWidth) ||
+			((vc - cy0) + (hc - cx2) + lineWidth >= 0  && (hc - cx2) + (vc - cy0) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[3] && cx0 - letterHeight - lineWidth <= hc && hc <= cx0 + letterHeight + lineWidth &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			(((vc - cy1) - (hc - cx0) >= lineWidth && (hc - cx0) - (vc - cy1) <= lineWidth) ||
+			((vc - cy1) + (hc - cx0) + lineWidth >= 0  && (hc - cx0) + (vc - cy1) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
 		else if (x[4] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
 			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
 			(((vc - cy1) - (hc - cx1) >= lineWidth && (hc - cx1) - (vc - cy1) <= lineWidth) ||
@@ -523,14 +615,121 @@ module vga_display(
 			vgaGreen = 3'b111;
 			vgaBlue = 2'b11;
 		end
-
-
+		else if (x[5] && cx2 - letterHeight - lineWidth <= hc && hc <= cx2 + letterHeight + lineWidth &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			(((vc - cy1) - (hc - cx2) >= lineWidth && (hc - cx2) - (vc - cy1) <= lineWidth) ||
+			((vc - cy1) + (hc - cx2) + lineWidth >= 0  && (hc - cx2) + (vc - cy1) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[6] && cx0 - letterHeight - lineWidth <= hc && hc <= cx0 + letterHeight + lineWidth &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			(((vc - cy2) - (hc - cx0) >= lineWidth && (hc - cx0) - (vc - cy2) <= lineWidth) ||
+			((vc - cy2) + (hc - cx0) + lineWidth >= 0  && (hc - cx0) + (vc - cy2) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[7] && cx1 - letterHeight - lineWidth <= hc && hc <= cx1 + letterHeight + lineWidth &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			(((vc - cy2) - (hc - cx1) >= lineWidth && (hc - cx1) - (vc - cy2) <= lineWidth) ||
+			((vc - cy2) + (hc - cx1) + lineWidth >= 0  && (hc - cx1) + (vc - cy2) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (x[8] && cx2 - letterHeight - lineWidth <= hc && hc <= cx2 + letterHeight + lineWidth &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			(((vc - cy2) - (hc - cx2) >= lineWidth && (hc - cx2) - (vc - cy2) <= lineWidth) ||
+			((vc - cy2) + (hc - cx2) + lineWidth >= 0  && (hc - cx2) + (vc - cy2) <= lineWidth))
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		//	display Os
+		else if (o[0] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			!(cx0 - letterHeight + lineWidth <= hc && hc <= cx0 + letterHeight - lineWidth &&
+			cy0 - letterHeight + lineWidth <= vc && vc <= cy0 + letterHeight - lineWidth)
+				
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[1] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			!(cx1 - letterHeight + lineWidth <= hc && hc <= cx1 + letterHeight - lineWidth &&
+			cy0 - letterHeight + lineWidth <= vc && vc <= cy0 + letterHeight - lineWidth)
+				
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[2] && cx2 - letterHeight <= hc && hc <= cx2 + letterHeight &&
+			cy0 - letterHeight <= vc && vc <= cy0 + letterHeight &&
+			!(cx2 - letterHeight + lineWidth <= hc && hc <= cx2 + letterHeight - lineWidth &&
+			cy0 - letterHeight + lineWidth <= vc && vc <= cy0 + letterHeight - lineWidth)	
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[3] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			!(cx0 - letterHeight + lineWidth <= hc && hc <= cx0 + letterHeight - lineWidth &&
+			cy1 - letterHeight + lineWidth <= vc && vc <= cy1 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
 		else if (o[4] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
 			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
 			!(cx1 - letterHeight + lineWidth <= hc && hc <= cx1 + letterHeight - lineWidth &&
 			cy1 - letterHeight + lineWidth <= vc && vc <= cy1 + letterHeight - lineWidth)
-			
-			
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[5] && cx2 - letterHeight <= hc && hc <= cx2 + letterHeight &&
+			cy1 - letterHeight <= vc && vc <= cy1 + letterHeight &&
+			!(cx2 - letterHeight + lineWidth <= hc && hc <= cx2 + letterHeight - lineWidth &&
+			cy1 - letterHeight + lineWidth <= vc && vc <= cy1 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[6] && cx0 - letterHeight <= hc && hc <= cx0 + letterHeight &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			!(cx0 - letterHeight + lineWidth <= hc && hc <= cx0 + letterHeight - lineWidth &&
+			cy2 - letterHeight + lineWidth <= vc && vc <= cy2 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[7] && cx1 - letterHeight <= hc && hc <= cx1 + letterHeight &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			!(cx1 - letterHeight + lineWidth <= hc && hc <= cx1 + letterHeight - lineWidth &&
+			cy2 - letterHeight + lineWidth <= vc && vc <= cy2 + letterHeight - lineWidth)
+		) begin
+			vgaRed = 3'b111;
+			vgaGreen = 3'b111;
+			vgaBlue = 2'b11;
+		end
+		else if (o[8] && cx2 - letterHeight <= hc && hc <= cx2 + letterHeight &&
+			cy2 - letterHeight <= vc && vc <= cy2 + letterHeight &&
+			!(cx2 - letterHeight + lineWidth <= hc && hc <= cx2 + letterHeight - lineWidth &&
+			cy2 - letterHeight + lineWidth <= vc && vc <= cy2 + letterHeight - lineWidth)
 		) begin
 			vgaRed = 3'b111;
 			vgaGreen = 3'b111;
@@ -547,24 +746,24 @@ module vga_display(
 
 endmodule
 
-
+// adapted from lab 3
 module clock_gen(
 	input clk, // 100 MHz
-	output reg vga_clk, // 25 MHz
+	output reg vga_clk, // 12.5 MHz
 	output reg display_clk // 50 - 700 Hz
 );
-	reg [1:0] vga_counter;
+	reg [2:0] vga_counter;
 	reg [18:0] display_counter;
 	
 	always @ (posedge clk) begin
-		if (vga_counter == 2'b0) begin
+		if (vga_counter == 3'b0) begin
 			vga_clk <= 1'b1;
 		end
-		else if (vga_counter == 2'b1) begin
+		else if (vga_counter == 3'b1) begin
 			vga_clk <= 1'b0;
 		end
 		
-		vga_counter <= vga_counter + 2'b1;
+		vga_counter <= vga_counter + 3'b1;
 	end
 
 	always @ (posedge clk) begin			
