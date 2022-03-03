@@ -22,7 +22,7 @@ module tic_tac_toe(
     input clk,
 	 input btnu, // buttons
 	 input btns,
-	 inout [7:0] JB, // keypad
+	 inout [7:0] JA, // keypad
 	 output [7:0] seg, // seven seg display
 	 output [3:0] an,
 	 // output [7:0] Led, // LED
@@ -38,27 +38,23 @@ module tic_tac_toe(
 	wire [3:0] d0, d1, d2, d3;
 	wire vga_clk, display_clk;
 
-	wire [3:0] rows_debounced;
-
 	wire rst_score, rst_board;
 	wire [8:0] move;
 	wire inval_move, x_win, y_win, tie;
 
 	debouncing debouncer(
-		.clk(vga_clk),
+		.clk(clk),
 		.btnu(btnu),
 		.btns(btns),
-		.rows(JB[7:4]),
 		.rst_score(rst_score),
-		.rst_board(rst_board),
-		.rows_debounced(rows_debounced)
+		.rst_board(rst_board)
 	);
 	
-	keypad_decoder decoder(
+	Decoder d(
 		.clk(clk),
-		.rows_debounced(rows_debounced), 
-		.cols(JB[3:0]),
-		.move(move)
+		.Row(JA[7:4]), 
+		.Col(JA[3:0]),
+		.DecodeOut(move)
 	);
 	
 	game_logic game(
@@ -117,8 +113,6 @@ module debouncing(
 	 input clk,
 	 input btnu, // buttons
 	 input btns,
-	 input [3:0] rows, // keypad
-	 output [3:0] rows_debounced,
 	 output rst_score,
 	 output rst_board
 );
@@ -145,89 +139,168 @@ module debouncing(
 			rst1_ff <= {1'b0, rst1_ff[1]};
 	end
 	
-	wire kp3_i;
-	reg [1:0] kp3_ff;
-	assign kp3_i = rows[3];
-	assign rows_debounced[3] = kp3_ff[0];
-	always @(posedge clk or posedge kp3_i) begin
-		if (kp3_i)
-			kp3_ff <= 2'b11;
-		else
-			kp3_ff <= {1'b0, kp3_ff[1]};
-	end
-
-	wire kp4_i;
-	reg [1:0] kp4_ff;
-	assign kp4_i = rows[2];
-	assign rows_debounced[2] = kp4_ff[0];
-	always @(posedge clk or posedge kp4_i) begin
-		if (kp4_i)
-			kp4_ff <= 2'b11;
-		else
-			kp4_ff <= {1'b0, kp4_ff[1]};
-	end
-	
-	wire kp5_i;
-	reg [1:0] kp5_ff;
-	assign kp5_i = rows[1];
-	assign rows_debounced[1] = kp5_ff[0];
-	always @(posedge clk or posedge kp5_i) begin
-		if (kp5_i)
-			kp5_ff <= 2'b11;
-		else
-			kp5_ff <= {1'b0, kp5_ff[1]};
-	end
-	
 endmodule
 
 
-module keypad_decoder(
-	input clk,
-	input [3:0] rows_debounced, 
-	output reg [3:0] cols,
-	output reg [8:0] move
-);
+// Online demo
+module Decoder(
+    clk,
+    Row,
+    Col,
+    DecodeOut
+    );
 
-	reg [1:0] col_update;
+    input clk;						// 100MHz onboard clock
+    input [3:0] Row;				// Rows on KYPD
+    output [3:0] Col;			// Columns on KYPD
+    output [8:0] DecodeOut;	// Output data
 	
+	// Output wires and registers
+	reg [3:0] Col;
+	reg [8:0] DecodeOut;
+	
+	// Count register
+	reg [19:0] sclk;
+
 	always @(posedge clk) begin
-		case (col_update) // cycle through which digit to update
-			2'b00: begin
-				case (rows_debounced)
-					4'b0111: move <= 9'b000000001; 
-					4'b1011: move <= 9'b000001000;
-					4'b1101: move <= 9'b001000000;
-					default: move <= 9'b0;
-				endcase
-				cols <= 4'b1011;
+
+			// 1ms
+			if (sclk == 20'b00011000011010100000) begin
+				//C1
+				Col <= 4'b0111;
+				sclk <= sclk + 1'b1;
 			end
-			2'b01: begin
-				case (rows_debounced)
-					4'b0111: move <= 9'b000000010; 
-					4'b1011: move <= 9'b000010000;
-					4'b1101: move <= 9'b010000000;
-					default: move <= 9'b0;
-				endcase
-				cols <= 4'b1101;
+			
+			// check row pins
+			else if(sclk == 20'b00011000011010101000) begin
+				//R1
+				if (Row == 4'b0111) begin
+					// DecodeOut <= 4'b0001;		//1
+					DecodeOut <= 9'b000000001;
+				end
+				//R2
+				else if(Row == 4'b1011) begin
+					// DecodeOut <= 4'b0100; 		//4
+					DecodeOut <= 9'b000001000;
+				end
+				//R3
+				else if(Row == 4'b1101) begin
+					// DecodeOut <= 4'b0111; 		//7
+					DecodeOut <= 9'b001000000;
+				end
+				//R4
+				else if(Row == 4'b1110) begin
+					// DecodeOut <= 4'b0000; 		//0
+					DecodeOut <= 9'b000000000;
+				end
+				sclk <= sclk + 1'b1;
 			end
-			2'b10: begin
-				case (rows_debounced)
-					4'b0111: move <= 9'b000000100; 
-					4'b1011: move <= 9'b000100000;
-					4'b1101: move <= 9'b100000000;
-					default: move <= 9'b0;
-				endcase
-				cols <= 4'b1110;
+
+			// 2ms
+			else if(sclk == 20'b00110000110101000000) begin
+				//C2
+				Col<= 4'b1011;
+				sclk <= sclk + 1'b1;
 			end
-			2'b11: begin
-				move <= 9'b0;
-				cols <= 4'b0111;
+			
+			// check row pins
+			else if(sclk == 20'b00110000110101001000) begin
+				//R1
+				if (Row == 4'b0111) begin
+					// DecodeOut <= 4'b0010; 		//2
+					DecodeOut <= 9'b000000010;
+				end
+				//R2
+				else if(Row == 4'b1011) begin
+					// DecodeOut <= 4'b0101; 		//5
+					DecodeOut <= 9'b000010000;
+				end
+				//R3
+				else if(Row == 4'b1101) begin
+					// DecodeOut <= 4'b1000; 		//8
+					DecodeOut <= 9'b010000000;
+				end
+				//R4
+				else if(Row == 4'b1110) begin
+					// DecodeOut <= 4'b1111; 		//F
+					DecodeOut <= 9'b000000000;
+				end
+				sclk <= sclk + 1'b1;
 			end
-		endcase
-		
-		col_update <= col_update + 2'b01;
+
+			//3ms
+			else if(sclk == 20'b01001001001111100000) begin
+				//C3
+				Col<= 4'b1101;
+				sclk <= sclk + 1'b1;
+			end
+			
+			// check row pins
+			else if(sclk == 20'b01001001001111101000) begin
+				//R1
+				if(Row == 4'b0111) begin
+					// DecodeOut <= 4'b0011; 		//3	
+					DecodeOut <= 9'b000000100;
+				end
+				//R2
+				else if(Row == 4'b1011) begin
+					// DecodeOut <= 4'b0110; 		//6
+					DecodeOut <= 9'b000100000;
+				end
+				//R3
+				else if(Row == 4'b1101) begin
+					// DecodeOut <= 4'b1001; 		//9
+					DecodeOut <= 9'b100000000;
+				end
+				//R4
+				else if(Row == 4'b1110) begin
+					// DecodeOut <= 4'b1110; 		//E
+					DecodeOut <= 9'b000000000;
+				end
+
+				sclk <= sclk + 1'b1;
+			end
+
+			//4ms
+			else if(sclk == 20'b01100001101010000000) begin
+				//C4
+				Col<= 4'b1110;
+				sclk <= sclk + 1'b1;
+			end
+
+			// Check row pins
+			else if(sclk == 20'b01100001101010001000) begin
+				//R1
+				if(Row == 4'b0111) begin
+					// DecodeOut <= 4'b1010; //A
+					DecodeOut <= 9'b000000000;
+				end
+				//R2
+				else if(Row == 4'b1011) begin
+					// DecodeOut <= 4'b1011; //B
+					DecodeOut <= 9'b000000000;
+				end
+				//R3
+				else if(Row == 4'b1101) begin
+					// DecodeOut <= 4'b1100; //C
+					DecodeOut <= 9'b000000000;
+				end
+				//R4
+				else if(Row == 4'b1110) begin
+					// DecodeOut <= 4'b1101; //D
+					DecodeOut <= 9'b000000000;
+				end
+				sclk <= 20'b00000000000000000000;
+			end
+
+			// Otherwise increment
+			else begin
+				DecodeOut <= 9'b000000000;
+				sclk <= sclk + 1'b1;
+			end
+			
 	end
-	
+
 endmodule
 
 
@@ -240,7 +313,7 @@ module game_logic(
 	output reg inval_move,
 	output reg x_win,
 	output reg o_win,
-	output tie
+	output reg tie
 );
 
 	reg turn; // 0 --> X, 1 --> O
@@ -749,21 +822,21 @@ endmodule
 // adapted from lab 3
 module clock_gen(
 	input clk, // 100 MHz
-	output reg vga_clk, // 12.5 MHz
+	output reg vga_clk, // 25 MHz
 	output reg display_clk // 50 - 700 Hz
 );
-	reg [2:0] vga_counter;
+	reg [1:0] vga_counter;
 	reg [18:0] display_counter;
 	
 	always @ (posedge clk) begin
-		if (vga_counter == 3'b0) begin
+		if (vga_counter == 2'b0) begin
 			vga_clk <= 1'b1;
 		end
-		else if (vga_counter == 3'b1) begin
+		else if (vga_counter == 2'b1) begin
 			vga_clk <= 1'b0;
 		end
 		
-		vga_counter <= vga_counter + 3'b1;
+		vga_counter <= vga_counter + 2'b1;
 	end
 
 	always @ (posedge clk) begin			
@@ -837,6 +910,10 @@ module seven_seg_display(
 					4'b0011: seg <= `THREE;
 					4'b0100: seg <= `FOUR;
 					4'b0101: seg <= `FIVE;
+					4'b0110: seg <= `SIX;
+					4'b0111: seg <= `SEVEN;
+					4'b1000: seg <= `EIGHT;
+					4'b1001: seg <= `NINE;
 					4'b1010: seg <= `BLANK;
 					default: seg <= `ZERO;
 				endcase
@@ -867,6 +944,10 @@ module seven_seg_display(
 					4'b0011: seg <= `THREE;
 					4'b0100: seg <= `FOUR;
 					4'b0101: seg <= `FIVE;
+					4'b0110: seg <= `SIX;
+					4'b0111: seg <= `SEVEN;
+					4'b1000: seg <= `EIGHT;
+					4'b1001: seg <= `NINE;
 					4'b1010: seg <= `BLANK;
 					default: seg <= `ZERO;
 				endcase
