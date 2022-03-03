@@ -25,7 +25,7 @@ module tic_tac_toe(
 	 inout [7:0] JA, // keypad
 	 output [7:0] seg, // seven seg display
 	 output [3:0] an,
-	 // output [7:0] Led, // LED
+	 output [7:0] Led, // LED
 	 output [2:0] red, // vga display
 	 output [2:0] green,
 	 output [1:0] blue,
@@ -40,7 +40,7 @@ module tic_tac_toe(
 
 	wire rst_score, rst_board;
 	wire [8:0] move;
-	wire inval_move, x_win, y_win, tie;
+	wire inval_move, x_win, o_win, tie;
 
 	debouncing debouncer(
 		.clk(clk),
@@ -66,6 +66,14 @@ module tic_tac_toe(
 		.x_win(x_win),
 		.o_win(o_win),
 		.tie(tie)
+	);
+	
+	led_display leds(
+		.x_win(x_win),
+		.o_win(o_win),
+		.tie(tie),
+		.inval_move(inval_move),
+		.Led(Led)
 	);
 	
 	scoreboard scorer(
@@ -164,8 +172,13 @@ module Decoder(
 
 	always @(posedge clk) begin
 
+			if(sclk == 20'b00011000011010011111) begin
+				DecodeOut <= 9'b000000000;
+				sclk <= sclk + 1'b1;
+			end
+
 			// 1ms
-			if (sclk == 20'b00011000011010100000) begin
+			else if (sclk == 20'b00011000011010100000) begin
 				//C1
 				Col <= 4'b0111;
 				sclk <= sclk + 1'b1;
@@ -193,6 +206,11 @@ module Decoder(
 					// DecodeOut <= 4'b0000; 		//0
 					DecodeOut <= 9'b000000000;
 				end
+				sclk <= sclk + 1'b1;
+			end
+
+			else if(sclk == 20'b00110000110100111111) begin
+				DecodeOut <= 9'b000000000;
 				sclk <= sclk + 1'b1;
 			end
 
@@ -228,6 +246,11 @@ module Decoder(
 				sclk <= sclk + 1'b1;
 			end
 
+			else if(sclk == 20'b01001001001111011111) begin
+				DecodeOut <= 9'b000000000;
+				sclk <= sclk + 1'b1;
+			end
+
 			//3ms
 			else if(sclk == 20'b01001001001111100000) begin
 				//C3
@@ -258,6 +281,11 @@ module Decoder(
 					DecodeOut <= 9'b000000000;
 				end
 
+				sclk <= sclk + 1'b1;
+			end
+
+			else if(sclk == 20'b01100001101001111111) begin
+				DecodeOut <= 9'b000000000;
 				sclk <= sclk + 1'b1;
 			end
 
@@ -295,7 +323,6 @@ module Decoder(
 
 			// Otherwise increment
 			else begin
-				DecodeOut <= 9'b000000000;
 				sclk <= sclk + 1'b1;
 			end
 			
@@ -317,6 +344,7 @@ module game_logic(
 );
 
 	reg turn; // 0 --> X, 1 --> O
+	reg result;
 	wire some_move = | move;
 	
 	always @(posedge some_move or posedge rst) begin
@@ -327,24 +355,32 @@ module game_logic(
 			inval_move <= 1'b0;
 			x_win <= 1'b0;
 			o_win <= 1'b0;
+			tie <= 1'b0;
 		end
-		else if (x_win || o_win || tie) begin
-			inval_move <= 1;
+		else if (result) begin
+			x_win <= 1'b0;
+			o_win <= 1'b0;
+			tie <= 1'b0;
+			result <= 0;
 		end
 		else if (move[0]) begin
 			if (x[0] || o[0]) begin
-				inval_move <= 1;
+				inval_move <= 1'b1;
 			end
 			else begin
 				if (turn) begin
 					o[0] <= 1;
-					if ((o[1] && o[2]) || (o[3] && o[6]) || (o[4] && o[8]))
-						o_win <= 1;
+					if ((o[1] && o[2]) || (o[3] && o[6]) || (o[4] && o[8])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[0] <= 1;
-					if ((x[1] && x[2]) || (x[3] && x[6]) || (x[4] && x[8]))
-						x_win <= 1;
+					if ((x[1] && x[2]) || (x[3] && x[6]) || (x[4] && x[8])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -358,13 +394,17 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[1] <= 1;
-					if ((o[0] && o[2]) || (o[4] && o[7]))
-						o_win <= 1;
+					if ((o[0] && o[2]) || (o[4] && o[7])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[1] <= 1;
-					if ((x[0] && x[2]) || (x[4] && x[7]))
-						x_win <= 1;
+					if ((x[0] && x[2]) || (x[4] && x[7])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -378,13 +418,17 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[2] <= 1;
-					if ((o[0] && o[1]) || (o[5] && o[8]) || (o[4] && o[6]))
-						o_win <= 1;
+					if ((o[0] && o[1]) || (o[5] && o[8]) || (o[4] && o[6])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[2] <= 1;
-					if ((x[0] && x[1]) || (x[5] && x[8]) || (x[4] && x[6]))
-						x_win <= 1;
+					if ((x[0] && x[1]) || (x[5] && x[8]) || (x[4] && x[6])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -398,13 +442,17 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[3] <= 1;
-					if ((o[0] && o[6]) || (o[4] && o[5]))
-						o_win <= 1;
+					if ((o[0] && o[6]) || (o[4] && o[5])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[3] <= 1;
-					if ((x[0] && x[6]) || (x[4] && x[5]))
-						x_win <= 1;
+					if ((x[0] && x[6]) || (x[4] && x[5])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -418,13 +466,17 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[4] <= 1;
-					if ((o[0] && o[8]) || (o[1] && o[7]) || (o[2] && o[6]) || (o[3] && o[5]))
-						o_win <= 1;
+					if ((o[0] && o[8]) || (o[1] && o[7]) || (o[2] && o[6]) || (o[3] && o[5])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[4] <= 1;
-					if ((x[0] && x[8]) || (x[1] && x[7]) || (x[2] && x[6]) || (x[3] && x[5]))
-						x_win <= 1;
+					if ((x[0] && x[8]) || (x[1] && x[7]) || (x[2] && x[6]) || (x[3] && x[5])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -438,13 +490,17 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[5] <= 1;
-					if ((o[3] && o[4]) || (o[2] && o[8]))
-						o_win <= 1;
+					if ((o[3] && o[4]) || (o[2] && o[8])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[5] <= 1;
-					if ((x[3] && x[4]) || (x[2] && x[8]))
-						x_win <= 1;
+					if ((x[3] && x[4]) || (x[2] && x[8])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -458,13 +514,17 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[6] <= 1;
-					if ((o[0] && o[3]) || (o[2] && o[4]) || (o[7] && o[8]))
-						o_win <= 1;
+					if ((o[0] && o[3]) || (o[2] && o[4]) || (o[7] && o[8])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[6] <= 1;
-					if ((x[0] && x[3]) || (x[2] && x[4]) || (x[7] && x[8]))
-						x_win <= 1;
+					if ((x[0] && x[3]) || (x[2] && x[4]) || (x[7] && x[8])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -478,13 +538,17 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[7] <= 1;
-					if ((o[1] && o[4]) || (o[6] && o[8]))
-						o_win <= 1;
+					if ((o[1] && o[4]) || (o[6] && o[8])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[7] <= 1;
-					if ((x[1] && x[4]) || (x[6] && x[8]))
-						x_win <= 1;
+					if ((x[1] && x[4]) || (x[6] && x[8])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
@@ -498,19 +562,26 @@ module game_logic(
 			else begin
 				if (turn) begin
 					o[8] <= 1;
-					if ((o[0] && o[4]) || (o[2] && o[5]) || (o[6] && o[7]))
-						o_win <= 1;
+					if ((o[0] && o[4]) || (o[2] && o[5]) || (o[6] && o[7])) begin
+						o_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end
 				else begin
 					x[8] <= 1;
-					if ((x[0] && x[4]) || (x[2] && x[5]) || (x[6] && x[7]))
-						x_win <= 1;
+					if ((x[0] && x[4]) || (x[2] && x[5]) || (x[6] && x[7])) begin
+						x_win <= 1'b1;
+						result <= 1'b1;
+					end
 				end	
 				
 				inval_move <= 0;
 				turn <= ~turn;
 			end
 		end
+//		else begin
+//			inval_move <= 1;
+//		end
 		// check for tie
 		
 	end
@@ -524,7 +595,7 @@ module scoreboard(
 	input o_win,
 	output reg [3:0] d0,
 	output reg [3:0] d1,
-	output reg[3:0] d2,
+	output reg [3:0] d2,
 	output reg [3:0] d3
 );
 
@@ -536,7 +607,7 @@ module scoreboard(
 			d3 <= 4'b0;
 		end
 		else if (x_win) begin
-			if (d3 == 4'b0101 && d2 == 4'b1001) begin
+			if (d3 == 4'b1001 && d2 == 4'b1001) begin
 				d2 <= 4'b0;
 				d3 <= 4'b0;
 			end
@@ -549,19 +620,34 @@ module scoreboard(
 			end
 		end
 		else if (o_win) begin
-			if (d1 == 4'b0101 && d0 == 4'b1001) begin
+			if (d1 == 4'b1001 && d0 == 4'b1001) begin
 				d0 <= 4'b0;
 				d1 <= 4'b0;
 			end
 			else if (d2 == 4'b1001) begin
 				d0 <= 4'b0;
-				d1 <= d3 + 4'b1;
+				d1 <= d1 + 4'b1;
 			end
 			else begin
-				d0 <= d2 + 4'b1;
+				d0 <= d0 + 4'b1;
 			end
 		end
 	end
+
+endmodule
+
+module led_display(
+	input x_win,
+	input o_win,
+	input tie,
+	input inval_move,
+	output [7:0] Led
+);
+	assign Led[2] = x_win;
+	assign Led[0] = o_win;
+	assign Led[1] = tie;
+	assign Led[7] = inval_move;
+	assign Led[6:3] = 4'b0;
 
 endmodule
 
