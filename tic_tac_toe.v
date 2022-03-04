@@ -165,6 +165,7 @@ module Decoder(
 	
 	// Output wires and registers
 	reg [3:0] Col;
+	reg [8:0] D1, D2, D3;
 	reg [8:0] DecodeOut;
 	
 	// Count register
@@ -172,13 +173,8 @@ module Decoder(
 
 	always @(posedge clk) begin
 
-			if(sclk == 20'b00011000011010011111) begin
-				DecodeOut <= 9'b000000000;
-				sclk <= sclk + 1'b1;
-			end
-
 			// 1ms
-			else if (sclk == 20'b00011000011010100000) begin
+			if (sclk == 20'b00011000011010100000) begin
 				//C1
 				Col <= 4'b0111;
 				sclk <= sclk + 1'b1;
@@ -188,29 +184,34 @@ module Decoder(
 			else if(sclk == 20'b00011000011010101000) begin
 				//R1
 				if (Row == 4'b0111) begin
-					// DecodeOut <= 4'b0001;		//1
+					D1 <= 9'b000000001;  // 1
+					D2 <= 9'b000000001;
+					D3 <= 9'b000000001;
 					DecodeOut <= 9'b000000001;
 				end
 				//R2
 				else if(Row == 4'b1011) begin
-					// DecodeOut <= 4'b0100; 		//4
+					D1 <= 9'b000001000;   // 4
+					D2 <= 9'b000001000;
+					D3 <= 9'b000001000;
 					DecodeOut <= 9'b000001000;
 				end
 				//R3
 				else if(Row == 4'b1101) begin
-					// DecodeOut <= 4'b0111; 		//7
+					D1 <= 9'b001000000;		// 7
+					D2 <= 9'b001000000;
+					D3 <= 9'b001000000;
 					DecodeOut <= 9'b001000000;
 				end
 				//R4
-				else if(Row == 4'b1110) begin
-					// DecodeOut <= 4'b0000; 		//0
-					DecodeOut <= 9'b000000000;
+				//else if(Row == 4'b1110) begin  // 0
+				//end
+				else begin
+					D1 <= 9'b0;
+					D2 <= D1;
+					D3 <= D2;
+					DecodeOut <= D3;
 				end
-				sclk <= sclk + 1'b1;
-			end
-
-			else if(sclk == 20'b00110000110100111111) begin
-				DecodeOut <= 9'b000000000;
 				sclk <= sclk + 1'b1;
 			end
 
@@ -225,29 +226,34 @@ module Decoder(
 			else if(sclk == 20'b00110000110101001000) begin
 				//R1
 				if (Row == 4'b0111) begin
-					// DecodeOut <= 4'b0010; 		//2
+					D1 <= 9'b000000010;		//2
+					D2 <= 9'b000000010;
+					D3 <= 9'b000000010;
 					DecodeOut <= 9'b000000010;
 				end
 				//R2
 				else if(Row == 4'b1011) begin
-					// DecodeOut <= 4'b0101; 		//5
+					D1 <= 9'b000010000;		//5
+					D2 <= 9'b000010000;	
+					D3 <= 9'b000010000;	
 					DecodeOut <= 9'b000010000;
 				end
 				//R3
 				else if(Row == 4'b1101) begin
-					// DecodeOut <= 4'b1000; 		//8
+					D1 <= 9'b010000000; 		//8
+					D2 <= 9'b010000000;
+					D3 <= 9'b010000000;
 					DecodeOut <= 9'b010000000;
 				end
 				//R4
-				else if(Row == 4'b1110) begin
-					// DecodeOut <= 4'b1111; 		//F
-					DecodeOut <= 9'b000000000;
+				//else if(Row == 4'b1110) begin  //F
+				//end
+				else begin
+					D1 <= 9'b0;
+					D2 <= D1;
+					D3 <= D2;
+					DecodeOut <= D3;
 				end
-				sclk <= sclk + 1'b1;
-			end
-
-			else if(sclk == 20'b01001001001111011111) begin
-				DecodeOut <= 9'b000000000;
 				sclk <= sclk + 1'b1;
 			end
 
@@ -262,30 +268,34 @@ module Decoder(
 			else if(sclk == 20'b01001001001111101000) begin
 				//R1
 				if(Row == 4'b0111) begin
-					// DecodeOut <= 4'b0011; 		//3	
+					D1 <= 9'b000000100; 		//3
+					D2 <= 9'b000000100;
+					D3 <= 9'b000000100;
 					DecodeOut <= 9'b000000100;
 				end
 				//R2
 				else if(Row == 4'b1011) begin
-					// DecodeOut <= 4'b0110; 		//6
+					D1 <= 9'b000100000; 		//6
+					D2 <= 9'b000100000;
+					D3 <= 9'b000100000;
 					DecodeOut <= 9'b000100000;
 				end
 				//R3
 				else if(Row == 4'b1101) begin
-					// DecodeOut <= 4'b1001; 		//9
+					D1 <= 9'b100000000; 		//9
+					D2 <= 9'b100000000; 
+					D3 <= 9'b100000000; 
 					DecodeOut <= 9'b100000000;
 				end
 				//R4
-				else if(Row == 4'b1110) begin
-					// DecodeOut <= 4'b1110; 		//E
-					DecodeOut <= 9'b000000000;
+				//else if(Row == 4'b1110) begin // E
+				//end
+				else begin
+					D1 <= 9'b0;
+					D2 <= D1;
+					D3 <= D2;
+					DecodeOut <= D3;					
 				end
-
-				sclk <= sclk + 1'b1;
-			end
-
-			else if(sclk == 20'b01100001101001111111) begin
-				DecodeOut <= 9'b000000000;
 				sclk <= sclk + 1'b1;
 			end
 
@@ -298,26 +308,22 @@ module Decoder(
 
 			// Check row pins
 			else if(sclk == 20'b01100001101010001000) begin
-				//R1
-				if(Row == 4'b0111) begin
-					// DecodeOut <= 4'b1010; //A
-					DecodeOut <= 9'b000000000;
-				end
-				//R2
-				else if(Row == 4'b1011) begin
-					// DecodeOut <= 4'b1011; //B
-					DecodeOut <= 9'b000000000;
-				end
-				//R3
-				else if(Row == 4'b1101) begin
-					// DecodeOut <= 4'b1100; //C
-					DecodeOut <= 9'b000000000;
-				end
-				//R4
-				else if(Row == 4'b1110) begin
-					// DecodeOut <= 4'b1101; //D
-					DecodeOut <= 9'b000000000;
-				end
+//				//R1
+//				if(Row == 4'b0111) begin
+//					// DecodeOut <= 4'b1010; //A
+//				end
+//				//R2
+//				else if(Row == 4'b1011) begin
+//					// DecodeOut <= 4'b1011; //B
+//				end
+//				//R3
+//				else if(Row == 4'b1101) begin
+//					// DecodeOut <= 4'b1100; //C
+//				end
+//				//R4
+//				else if(Row == 4'b1110) begin
+//					// DecodeOut <= 4'b1101; //D
+//				end
 				sclk <= 20'b00000000000000000000;
 			end
 
@@ -338,256 +344,220 @@ module game_logic(
 	output reg [8:0] x,
 	output reg [8:0] o,
 	output reg inval_move,
-	output reg x_win,
-	output reg o_win,
-	output reg tie
+	output x_win,
+	output o_win,
+	output tie
 );
 
 	reg turn; // 0 --> X, 1 --> O
-	reg result;
-	wire some_move = | move;
+	wire slot_taken;
+	wire some_move;
+	
+	assign tie = &(x | o);
+	assign x_win = (x[0] && x[1] && x[2]) || (x[3] && x[4] && x[5])
+			|| (x[6] && x[7] && x[8]) || (x[0] && x[3] && x[6])
+			|| (x[1] && x[4] && x[7]) || (x[2] && x[5] && x[8])
+			|| (x[0] && x[4] && x[8]) || (x[2] && x[4] && x[6]);
+	assign o_win = (o[0] && o[1] && o[2]) || (o[3] && o[4] && o[5])
+			|| (o[6] && o[7] && o[8]) || (o[0] && o[3] && o[6])
+			|| (o[1] && o[4] && o[7]) || (o[2] && o[5] && o[8])
+			|| (o[0] && o[4] && o[8]) || (o[2] && o[4] && o[6]);
+	
+	
+	assign slot_taken = |(move & (x | o));
+	assign some_move = |move;
 	
 	always @(posedge some_move or posedge rst) begin
 		if (rst) begin
-			x <= 9'b0;
-			o <= 9'b0;
-			turn <= 1'b0;
-			inval_move <= 1'b0;
-			x_win <= 1'b0;
-			o_win <= 1'b0;
-			tie <= 1'b0;
+			turn <= 0;
+			inval_move <= 0;
 		end
-		else if (result) begin
-			x_win <= 1'b0;
-			o_win <= 1'b0;
-			tie <= 1'b0;
-			result <= 0;
+		else begin
+			turn <= ~turn;
+			inval_move <= (slot_taken || x_win || o_win || tie);
 		end
-		else if (move[0]) begin
-			if (x[0] || o[0]) begin
-				inval_move <= 1'b1;
-			end
-			else begin
-				if (turn) begin
-					o[0] <= 1;
-					if ((o[1] && o[2]) || (o[3] && o[6]) || (o[4] && o[8])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[0] <= 1;
-					if ((x[1] && x[2]) || (x[3] && x[6]) || (x[4] && x[8])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[1]) begin
-			if (x[1] || o[1]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[1] <= 1;
-					if ((o[0] && o[2]) || (o[4] && o[7])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[1] <= 1;
-					if ((x[0] && x[2]) || (x[4] && x[7])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[2]) begin
-			if (x[2] || o[2]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[2] <= 1;
-					if ((o[0] && o[1]) || (o[5] && o[8]) || (o[4] && o[6])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[2] <= 1;
-					if ((x[0] && x[1]) || (x[5] && x[8]) || (x[4] && x[6])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[3]) begin
-			if (x[3] || o[3]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[3] <= 1;
-					if ((o[0] && o[6]) || (o[4] && o[5])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[3] <= 1;
-					if ((x[0] && x[6]) || (x[4] && x[5])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[4]) begin
-			if (x[4] || o[4]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[4] <= 1;
-					if ((o[0] && o[8]) || (o[1] && o[7]) || (o[2] && o[6]) || (o[3] && o[5])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[4] <= 1;
-					if ((x[0] && x[8]) || (x[1] && x[7]) || (x[2] && x[6]) || (x[3] && x[5])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[5]) begin
-			if (x[5] || o[5]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[5] <= 1;
-					if ((o[3] && o[4]) || (o[2] && o[8])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[5] <= 1;
-					if ((x[3] && x[4]) || (x[2] && x[8])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[6]) begin
-			if (x[6] || o[6]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[6] <= 1;
-					if ((o[0] && o[3]) || (o[2] && o[4]) || (o[7] && o[8])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[6] <= 1;
-					if ((x[0] && x[3]) || (x[2] && x[4]) || (x[7] && x[8])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[7]) begin
-			if (x[7] || o[7]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[7] <= 1;
-					if ((o[1] && o[4]) || (o[6] && o[8])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[7] <= 1;
-					if ((x[1] && x[4]) || (x[6] && x[8])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-		else if (move[8]) begin
-			if (x[8] || o[8]) begin
-				inval_move <= 1;
-			end
-			else begin
-				if (turn) begin
-					o[8] <= 1;
-					if ((o[0] && o[4]) || (o[2] && o[5]) || (o[6] && o[7])) begin
-						o_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end
-				else begin
-					x[8] <= 1;
-					if ((x[0] && x[4]) || (x[2] && x[5]) || (x[6] && x[7])) begin
-						x_win <= 1'b1;
-						result <= 1'b1;
-					end
-				end	
-				
-				inval_move <= 0;
-				turn <= ~turn;
-			end
-		end
-//		else begin
-//			inval_move <= 1;
-//		end
-		// check for tie
-		
 	end
+	
+	always @(posedge move[0] or posedge rst) begin
+		if (rst) begin
+			x[0] <= 0;
+			o[0] <= 0;
+		end
+		else begin
+			o[0] <= turn;
+			x[0] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[1] or posedge rst) begin
+		if (rst) begin
+			x[1] <= 0;
+			o[1] <= 0;
+		end
+		else begin
+			o[1] <= turn;
+			x[1] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[2] or posedge rst) begin
+		if (rst) begin
+			x[2] <= 0;
+			o[2] <= 0;
+		end
+		else begin
+			o[2] <= turn;
+			x[2] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[3] or posedge rst) begin
+		if (rst) begin
+			x[3] <= 0;
+			o[3] <= 0;
+		end
+		else begin
+			o[3] <= turn;
+			x[3] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[4] or posedge rst) begin
+		if (rst) begin
+			x[4] <= 0;
+			o[4] <= 0;
+		end
+		else begin
+			o[4] <= turn;
+			x[4] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[5] or posedge rst) begin
+		if (rst) begin
+			x[5] <= 0;
+			o[5] <= 0;
+		end
+		else begin
+			o[5] <= turn;
+			x[5] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[6] or posedge rst) begin
+		if (rst) begin
+			x[6] <= 0;
+			o[6] <= 0;
+		end
+		else begin
+			o[6] <= turn;
+			x[6] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[7] or posedge rst) begin
+		if (rst) begin
+			x[7] <= 0;
+			o[7] <= 0;
+		end
+		else begin
+			o[7] <= turn;
+			x[7] <= ~turn;
+		end
+	end
+	
+	always @(posedge move[8] or posedge rst) begin
+		if (rst) begin
+			x[8] <= 0;
+			o[8] <= 0;
+		end
+		else begin
+			o[8] <= turn;
+			x[8] <= ~turn;
+		end
+	end
+	
+//	always @(posedge move[0] or posedge move[1] or posedge move[2]
+//			or posedge move[3] or posedge move[4] or posedge move[5] 
+//			or posedge move[6] or posedge move[7] or posedge move[8] 
+//			or posedge rst) begin
+//		if (rst) begin
+//			x <= 9'b0;
+//			o <= 9'b0;
+//			turn <= 1'b0;
+//			inval_move <= 1'b0;
+//		end
+//		else if (x_win || o_win || tie || slot_taken) begin
+//			inval_move <= 1'b1;
+//		end
+//		else if (move[0]) begin
+//			o[0] <= turn;
+//			x[0] <= ~turn;
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[1]) begin
+//			o[1] <= turn;
+//			x[1] <= ~turn;
+//			
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[2]) begin
+//			o[2] <= turn;
+//			x[2] <= ~turn;
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[3]) begin
+//			o[3] <= turn;
+//			x[3] <= ~turn;
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[4]) begin
+//			o[4] <= turn;
+//			x[4] <= ~turn;
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[5]) begin
+//			o[5] <= turn;
+//			x[5] <= ~turn;
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[6]) begin
+//			o[6] <= turn;
+//			x[6] <= ~turn;
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[7]) begin
+//			o[7] <= turn;
+//			x[7] <= ~turn;
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end
+//		else if (move[8]) begin
+//			o[8] <= turn;
+//			x[8] <= ~turn;	
+//				
+//			inval_move <= 0;
+//			turn <= ~turn;
+//		end	
+//	end
 
 endmodule
 
+//===================
 
 module scoreboard(
 	input rst,
@@ -599,10 +569,8 @@ module scoreboard(
 	output reg [3:0] d3
 );
 
-	always @(posedge rst or posedge x_win or posedge o_win) begin
+	always @(posedge rst or posedge x_win) begin
 		if (rst) begin
-			d0 <= 4'b0;
-			d1 <= 4'b0;
 			d2 <= 4'b0;
 			d3 <= 4'b0;
 		end
@@ -618,6 +586,13 @@ module scoreboard(
 			else begin
 				d2 <= d2 + 4'b1;
 			end
+		end
+	end
+	
+	always @(posedge rst or posedge o_win) begin
+		if (rst) begin
+			d0 <= 4'b0;
+			d1 <= 4'b0;
 		end
 		else if (o_win) begin
 			if (d1 == 4'b1001 && d0 == 4'b1001) begin
@@ -703,21 +678,21 @@ module vga_display(
 		end
 		else begin
 			if (hc < hpixels - 1)
-				hc <= hc + 1;
+				hc <= hc + 10'b1;
 			else begin
 				hc <= 0;
 				if (vc < vlines - 1)
-					vc <= vc + 1;
+					vc <= vc + 10'b1;
 				else
 					vc <= 0;
 			end
 		end
 	end
 
-	assign hsync = (hc < hpulse) ? 0: 1;
-	assign vsync = (vc < vpulse) ? 0: 1;
+	assign hsync = (hc < hpulse) ? 1'b0: 1'b1;
+	assign vsync = (vc < vpulse) ? 1'b0: 1'b1;
 	
-	always @(vc or hc) begin
+	always @(*) begin
 		if ((hline1 - lineWidth <= vc && vc <= hline1 + lineWidth) ||
 			(hline2 - lineWidth <= vc && vc <= hline2 + lineWidth) ||
 			(vline1 - lineWidth <= hc && hc <= vline1 + lineWidth) ||
