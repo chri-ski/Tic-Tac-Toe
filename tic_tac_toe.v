@@ -353,7 +353,7 @@ module game_logic(
 	wire slot_taken;
 	wire some_move;
 	
-	assign tie = &(x | o);
+	assign tie = &(x | o) & (~x_win);
 	assign x_win = (x[0] && x[1] && x[2]) || (x[3] && x[4] && x[5])
 			|| (x[6] && x[7] && x[8]) || (x[0] && x[3] && x[6])
 			|| (x[1] && x[4] && x[7]) || (x[2] && x[5] && x[8])
@@ -364,7 +364,7 @@ module game_logic(
 			|| (o[0] && o[4] && o[8]) || (o[2] && o[4] && o[6]);
 	
 	
-	assign slot_taken = |(move & (x | o));
+	assign slot_taken = |((x | o) & move);
 	assign some_move = |move;
 	
 	always @(posedge some_move or posedge rst) begin
@@ -384,8 +384,10 @@ module game_logic(
 			o[0] <= 0;
 		end
 		else begin
-			o[0] <= turn;
-			x[0] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[0] <= turn;
+				x[0] <= ~turn;
+			end
 		end
 	end
 	
@@ -395,8 +397,10 @@ module game_logic(
 			o[1] <= 0;
 		end
 		else begin
-			o[1] <= turn;
-			x[1] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[1] <= turn;
+				x[1] <= ~turn;
+			end
 		end
 	end
 	
@@ -406,8 +410,10 @@ module game_logic(
 			o[2] <= 0;
 		end
 		else begin
-			o[2] <= turn;
-			x[2] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[2] <= turn;
+				x[2] <= ~turn;
+			end
 		end
 	end
 	
@@ -417,8 +423,10 @@ module game_logic(
 			o[3] <= 0;
 		end
 		else begin
-			o[3] <= turn;
-			x[3] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[3] <= turn;
+				x[3] <= ~turn;
+			end
 		end
 	end
 	
@@ -428,8 +436,10 @@ module game_logic(
 			o[4] <= 0;
 		end
 		else begin
-			o[4] <= turn;
-			x[4] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[4] <= turn;
+				x[4] <= ~turn;
+			end
 		end
 	end
 	
@@ -439,8 +449,10 @@ module game_logic(
 			o[5] <= 0;
 		end
 		else begin
-			o[5] <= turn;
-			x[5] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[5] <= turn;
+				x[5] <= ~turn;
+			end
 		end
 	end
 	
@@ -450,8 +462,10 @@ module game_logic(
 			o[6] <= 0;
 		end
 		else begin
-			o[6] <= turn;
-			x[6] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[6] <= turn;
+				x[6] <= ~turn;
+			end
 		end
 	end
 	
@@ -461,8 +475,10 @@ module game_logic(
 			o[7] <= 0;
 		end
 		else begin
-			o[7] <= turn;
-			x[7] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[7] <= turn;
+				x[7] <= ~turn;
+			end
 		end
 	end
 	
@@ -472,8 +488,10 @@ module game_logic(
 			o[8] <= 0;
 		end
 		else begin
-			o[8] <= turn;
-			x[8] <= ~turn;
+			if (!(slot_taken || x_win || o_win || tie)) begin
+				o[8] <= turn;
+				x[8] <= ~turn;
+			end
 		end
 	end
 	
@@ -1018,4 +1036,4 @@ module seven_seg_display(
 		digitUpdate <= digitUpdate + 2'b01;
 	end
 
-endmodule
+endmodule
