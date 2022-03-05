@@ -350,7 +350,6 @@ module game_logic(
 );
 
 	reg turn; // 0 --> X, 1 --> O
-	wire slot_taken;
 	wire some_move;
 	
 	assign tie = &(x | o) & (~x_win);
@@ -363,8 +362,6 @@ module game_logic(
 			|| (o[1] && o[4] && o[7]) || (o[2] && o[5] && o[8])
 			|| (o[0] && o[4] && o[8]) || (o[2] && o[4] && o[6]);
 	
-	
-	assign slot_taken = |((x | o) & move);
 	assign some_move = |move;
 	
 	always @(posedge some_move or posedge rst) begin
@@ -374,7 +371,7 @@ module game_logic(
 		end
 		else begin
 			turn <= ~turn;
-			inval_move <= (slot_taken || x_win || o_win || tie);
+			inval_move <= (((x | o) & move) || x_win || o_win || tie);
 		end
 	end
 	
@@ -384,7 +381,7 @@ module game_logic(
 			o[0] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[0] || o[0] || x_win || o_win || tie)) begin
 				o[0] <= turn;
 				x[0] <= ~turn;
 			end
@@ -397,7 +394,7 @@ module game_logic(
 			o[1] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[1] || o[1] || x_win || o_win || tie)) begin
 				o[1] <= turn;
 				x[1] <= ~turn;
 			end
@@ -410,7 +407,7 @@ module game_logic(
 			o[2] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[2] || o[2] || x_win || o_win || tie)) begin
 				o[2] <= turn;
 				x[2] <= ~turn;
 			end
@@ -423,7 +420,7 @@ module game_logic(
 			o[3] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[3] || o[3] || x_win || o_win || tie)) begin
 				o[3] <= turn;
 				x[3] <= ~turn;
 			end
@@ -436,7 +433,7 @@ module game_logic(
 			o[4] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[4] || o[4] || x_win || o_win || tie)) begin
 				o[4] <= turn;
 				x[4] <= ~turn;
 			end
@@ -449,7 +446,7 @@ module game_logic(
 			o[5] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[5] || o[5] || x_win || o_win || tie)) begin
 				o[5] <= turn;
 				x[5] <= ~turn;
 			end
@@ -462,7 +459,7 @@ module game_logic(
 			o[6] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[6] || o[6] || x_win || o_win || tie)) begin
 				o[6] <= turn;
 				x[6] <= ~turn;
 			end
@@ -475,7 +472,7 @@ module game_logic(
 			o[7] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[7] || o[7] || x_win || o_win || tie)) begin
 				o[7] <= turn;
 				x[7] <= ~turn;
 			end
@@ -488,94 +485,15 @@ module game_logic(
 			o[8] <= 0;
 		end
 		else begin
-			if (!(slot_taken || x_win || o_win || tie)) begin
+			if (!(x[8] || o[8] || x_win || o_win || tie)) begin
 				o[8] <= turn;
 				x[8] <= ~turn;
 			end
 		end
 	end
-	
-//	always @(posedge move[0] or posedge move[1] or posedge move[2]
-//			or posedge move[3] or posedge move[4] or posedge move[5] 
-//			or posedge move[6] or posedge move[7] or posedge move[8] 
-//			or posedge rst) begin
-//		if (rst) begin
-//			x <= 9'b0;
-//			o <= 9'b0;
-//			turn <= 1'b0;
-//			inval_move <= 1'b0;
-//		end
-//		else if (x_win || o_win || tie || slot_taken) begin
-//			inval_move <= 1'b1;
-//		end
-//		else if (move[0]) begin
-//			o[0] <= turn;
-//			x[0] <= ~turn;
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[1]) begin
-//			o[1] <= turn;
-//			x[1] <= ~turn;
-//			
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[2]) begin
-//			o[2] <= turn;
-//			x[2] <= ~turn;
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[3]) begin
-//			o[3] <= turn;
-//			x[3] <= ~turn;
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[4]) begin
-//			o[4] <= turn;
-//			x[4] <= ~turn;
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[5]) begin
-//			o[5] <= turn;
-//			x[5] <= ~turn;
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[6]) begin
-//			o[6] <= turn;
-//			x[6] <= ~turn;
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[7]) begin
-//			o[7] <= turn;
-//			x[7] <= ~turn;
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end
-//		else if (move[8]) begin
-//			o[8] <= turn;
-//			x[8] <= ~turn;	
-//				
-//			inval_move <= 0;
-//			turn <= ~turn;
-//		end	
-//	end
 
 endmodule
 
-//===================
 
 module scoreboard(
 	input rst,
