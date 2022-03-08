@@ -58,6 +58,7 @@ module tic_tac_toe(
 	);
 	
 	game_logic game(
+		.clk(clk),
 		.move(move),
 		.rst(rst_board),
 		.x(x),
@@ -77,6 +78,7 @@ module tic_tac_toe(
 	);
 	
 	scoreboard scorer(
+		.clk(clk),
 		.rst(rst_score),
 		.x_win(x_win),
 		.o_win(o_win),
@@ -339,6 +341,7 @@ endmodule
 
 
 module game_logic(
+	input clk,
 	input [8:0] move,
 	input rst,
 	output reg [8:0] x,
@@ -350,7 +353,10 @@ module game_logic(
 );
 
 	reg turn; // 0 --> X, 1 --> O
-	wire some_move;
+	reg [8:0] offset_move_0;
+	reg [8:0] offset_move_1;
+	wire some_move, some_offset_0, some_offset_1;
+	wire inval_move_temp;
 	
 	assign tie = &(x | o) & (~x_win);
 	assign x_win = (x[0] && x[1] && x[2]) || (x[3] && x[4] && x[5])
@@ -363,19 +369,34 @@ module game_logic(
 			|| (o[0] && o[4] && o[8]) || (o[2] && o[4] && o[6]);
 	
 	assign some_move = |move;
+	assign some_offset_0 = |offset_move_0;
+	assign some_offset_1 = |offset_move_1;
+
+	assign inval_move_temp = |{(move & (x | o)), x_win, o_win, tie};
 	
-	always @(posedge some_move or posedge rst) begin
+	always @(posedge clk or posedge rst) begin
+		if (rst) begin
+			offset_move_1 <= 9'b0;
+			offset_move_0 <= 9'b0;
+		end
+		else begin
+			offset_move_1 <= offset_move_0;
+			offset_move_0 <= move;
+		end
+	end
+	
+	always @(posedge some_offset_1 or posedge rst) begin
 		if (rst) begin
 			turn <= 0;
 			inval_move <= 0;
 		end
 		else begin
-			turn <= ~turn;
-			inval_move <= (((x | o) & move) || x_win || o_win || tie);
+			turn <= ~inval_move_temp ^ turn;
+			inval_move <= inval_move_temp;
 		end
 	end
 	
-	always @(posedge move[0] or posedge rst) begin
+	always @(posedge offset_move_1[0] or posedge rst) begin
 		if (rst) begin
 			x[0] <= 0;
 			o[0] <= 0;
@@ -388,7 +409,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[1] or posedge rst) begin
+	always @(posedge offset_move_1[1] or posedge rst) begin
 		if (rst) begin
 			x[1] <= 0;
 			o[1] <= 0;
@@ -401,7 +422,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[2] or posedge rst) begin
+	always @(posedge offset_move_1[2] or posedge rst) begin
 		if (rst) begin
 			x[2] <= 0;
 			o[2] <= 0;
@@ -414,7 +435,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[3] or posedge rst) begin
+	always @(posedge offset_move_1[3] or posedge rst) begin
 		if (rst) begin
 			x[3] <= 0;
 			o[3] <= 0;
@@ -427,7 +448,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[4] or posedge rst) begin
+	always @(posedge offset_move_1[4] or posedge rst) begin
 		if (rst) begin
 			x[4] <= 0;
 			o[4] <= 0;
@@ -440,7 +461,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[5] or posedge rst) begin
+	always @(posedge offset_move_1[5] or posedge rst) begin
 		if (rst) begin
 			x[5] <= 0;
 			o[5] <= 0;
@@ -453,7 +474,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[6] or posedge rst) begin
+	always @(posedge offset_move_1[6] or posedge rst) begin
 		if (rst) begin
 			x[6] <= 0;
 			o[6] <= 0;
@@ -466,7 +487,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[7] or posedge rst) begin
+	always @(posedge offset_move_1[7] or posedge rst) begin
 		if (rst) begin
 			x[7] <= 0;
 			o[7] <= 0;
@@ -479,7 +500,7 @@ module game_logic(
 		end
 	end
 	
-	always @(posedge move[8] or posedge rst) begin
+	always @(posedge offset_move_1[8] or posedge rst) begin
 		if (rst) begin
 			x[8] <= 0;
 			o[8] <= 0;
@@ -496,6 +517,7 @@ endmodule
 
 
 module scoreboard(
+	input clk,
 	input rst,
 	input x_win,
 	input o_win,
@@ -505,7 +527,17 @@ module scoreboard(
 	output reg [3:0] d3
 );
 
-	always @(posedge rst or posedge x_win) begin
+	reg x_win_reg, o_win_reg;
+	
+	always @(posedge clk) begin
+		x_win_reg <= x_win;
+	end
+	
+	always @(posedge clk) begin
+		o_win_reg <= o_win;
+	end
+	
+	always @(posedge rst or posedge x_win_reg) begin
 		if (rst) begin
 			d2 <= 4'b0;
 			d3 <= 4'b0;
@@ -525,7 +557,7 @@ module scoreboard(
 		end
 	end
 	
-	always @(posedge rst or posedge o_win) begin
+	always @(posedge rst or posedge o_win_reg) begin
 		if (rst) begin
 			d0 <= 4'b0;
 			d1 <= 4'b0;
